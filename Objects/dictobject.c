@@ -2561,7 +2561,7 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     di->di_used = dict->ma_used;
     di->di_pos = 0;
     di->len = dict->ma_used;
-    Py_ssize_t shuffled_index_len = di->len;
+    Py_ssize_t shuffled_index_len = dict->ma_mask;
     di->shuffled_index = (Py_ssize_t*)calloc(shuffled_index_len + 1,sizeof(Py_ssize_t));
     Py_ssize_t i;
     for (i = 0; i < shuffled_index_len + 1; i++) {
