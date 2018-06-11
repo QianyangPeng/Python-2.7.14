@@ -157,6 +157,9 @@ Py_InitializeEx(int install_sigs)
     PyInterpreterState *interp;
     PyThreadState *tstate;
     PyObject *bimod, *sysmod;
+    char *srandseed = getenv("PYTHON_SRAND_SEED");
+    if(srandseed)
+        srand(atoi(srandseed));
     char *p;
     char *icodeset = NULL; /* On Windows, input codeset may theoretically
                               differ from output codeset. */

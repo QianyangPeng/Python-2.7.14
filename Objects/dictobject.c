@@ -2546,6 +2546,7 @@ typedef struct {
     Py_ssize_t di_pos;
     PyObject* di_result; /* reusable result tuple for iteritems */
     Py_ssize_t len;
+    Py_ssize_t* shuffled_index;
 } dictiterobject;
 
 static PyObject *
@@ -2560,6 +2561,20 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     di->di_used = dict->ma_used;
     di->di_pos = 0;
     di->len = dict->ma_used;
+    Py_ssize_t shuffled_index_len = dict->ma_mask;
+    di->shuffled_index = (Py_ssize_t*)calloc(shuffled_index_len + 1,sizeof(Py_ssize_t));
+    Py_ssize_t i;
+    for (i = 0; i < shuffled_index_len + 1; i++) {
+        di->shuffled_index[i] = i;
+    }
+    if (shuffled_index_len > 1) {
+        for (i = 0; i < shuffled_index_len-1; i++) {
+            Py_ssize_t j = i + rand() / (RAND_MAX / (shuffled_index_len - i) + 1);
+            Py_ssize_t t = di->shuffled_index[j];
+            di->shuffled_index[j] = di->shuffled_index[i];
+            di->shuffled_index[i] = t;
+        }
+    }
     if (itertype == &PyDictIterItem_Type) {
         di->di_result = PyTuple_Pack(2, Py_None, Py_None);
         if (di->di_result == NULL) {
@@ -2628,13 +2643,13 @@ static PyObject *dictiter_iternextkey(dictiterobject *di)
         goto fail;
     ep = d->ma_table;
     mask = d->ma_mask;
-    while (i <= mask && ep[i].me_value == NULL)
+    while (i <= mask && ep[di->shuffled_index[i]].me_value == NULL)
         i++;
     di->di_pos = i+1;
     if (i > mask)
         goto fail;
     di->len--;
-    key = ep[i].me_key;
+    key = ep[di->shuffled_index[i]].me_key;
     Py_INCREF(key);
     return key;
 
@@ -2700,7 +2715,7 @@ static PyObject *dictiter_iternextvalue(dictiterobject *di)
     if (i < 0 || i > mask)
         goto fail;
     ep = d->ma_table;
-    while ((value=ep[i].me_value) == NULL) {
+    while ((value=ep[di->shuffled_index[i]].me_value) == NULL) {
         i++;
         if (i > mask)
             goto fail;
@@ -2772,15 +2787,15 @@ static PyObject *dictiter_iternextitem(dictiterobject *di)
         goto fail;
     ep = d->ma_table;
     mask = d->ma_mask;
-    while (i <= mask && ep[i].me_value == NULL)
+    while (i <= mask && ep[di->shuffled_index[i]].me_value == NULL)
         i++;
     di->di_pos = i+1;
     if (i > mask)
         goto fail;
 
     di->len--;
-    key = ep[i].me_key;
-    value = ep[i].me_value;
+    key = ep[di->shuffled_index[i]].me_key;
+    value = ep[di->shuffled_index[i]].me_value;
     Py_INCREF(key);
     Py_INCREF(value);
     result = di->di_result;
