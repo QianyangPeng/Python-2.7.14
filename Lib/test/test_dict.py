@@ -3,7 +3,6 @@ from test import test_support
 
 import UserDict, random, string
 import gc, weakref
-import os
 
 
 class DictTest(unittest.TestCase):
