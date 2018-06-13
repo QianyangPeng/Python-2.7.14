@@ -3,6 +3,7 @@ from test import test_support
 
 import UserDict, random, string
 import gc, weakref
+import os
 
 
 class DictTest(unittest.TestCase):
@@ -578,6 +579,41 @@ class DictTest(unittest.TestCase):
             del obj, container
             gc.collect()
             self.assertIs(ref(), None, "Cycle was not collected")
+
+    def test_randomized_iterator(self):
+        d = {"a":1, "b":2, "c":3, "d":4}
+        a = [{}, {}, {}, {}]
+        for k in range(100):
+            for i,e in enumerate(d):
+                if e in a[i]:
+                    a[i][e] += 1
+                else:
+                    a[i][e] = 1 
+        self.assertEqual(len(a[0]), 4)
+        self.assertEqual(len(a[1]), 4)
+        self.assertEqual(len(a[2]), 4)
+        self.assertEqual(len(a[3]), 4)
+
+    def test_randomized_iterator2(self):
+        d = {"a":1, "b":2, "c":3, "d":4}
+        a = [{}, {}, {}, {}]
+        b = [{}, {}, {}, {}]
+        for k in range(100):
+            for i,e in enumerate(d):
+                if e in a[i]:
+                    a[i][e] += 1
+                else:
+                    a[i][e] = 1 
+        for k in range(100):
+            for i,e in enumerate(d):
+                if e in b[i]:
+                    b[i][e] += 1
+                else:
+                    b[i][e] = 1 
+        self.assertNotEqual(a[0], b[0])
+        self.assertNotEqual(a[1], b[1])
+        self.assertNotEqual(a[2], b[2])
+        self.assertNotEqual(a[3], b[3])
 
     def _not_tracked(self, t):
         # Nested containers can take several collections to untrack
